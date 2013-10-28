@@ -97,6 +97,18 @@ class TestFormValidation(unittest.TestCase):
             self.assertEqual(data, form.cleaned)
             self.assertFalse(form.errors)
 
+    def test_if_noexist(self):
+        schema = {
+            Optional('one'): 'value',
+            If([['one']], 'two'): 2
+        }
+        data = {}
+        form = Form(schema)
+        form.validate(data)
+        self.assertFalse(form.errors)
+        self.assertFalse(form.errors.section_errors)
+    #TODO: test nested keys
+
 class TestFormValidationFailure(unittest.TestCase):
 
     def test_wrong_values(self):
@@ -126,6 +138,94 @@ class TestFormValidationFailure(unittest.TestCase):
         self.assertTrue(form.errors['one'])
         self.assertTrue(form.errors['two'])
         self.assertTrue(form.errors['three']['nested_two'])
+
+    def test_wrong_value_inside_container(self):
+        schema = {
+            Optional('one'): 'one',
+            If([['one']], 2): 'two',
+            Or: {
+                'three': 3,
+                3: 'three'
+            },
+            XOr: {
+                'four': 4,
+                4: 'four'
+            }
+        }
+        data = {
+            'one': 1,
+            2: 2,
+            3: 3,
+            4: 4,
+        }
+        form = Form(schema)
+        form.validate(data)
+        self.assertEqual({}, form.cleaned)
+        self.assertTrue(form.errors)
+        for key in ['one', 2, 3, 4]:
+            self.assertTrue(form.errors[key])
+
+    def test_missing_key(self):
+        schema = {
+            'one': 1,
+            'two': 2,
+            'three': {
+                'four': 4,
+                'five': 5
+            }
+        }
+        data = {
+            'two': 2
+        }
+        form = Form(schema)
+        form.validate(data)
+        self.assertEqual(len(form.errors.section_errors), 2)
+        for sectionerr in form.errors.section_errors:
+            self.assertTrue("missing" in sectionerr.lower())
+
+    def test_missing_or(self):
+        schema = {
+            Or: {
+                'one': 1,
+                'two': 2,
+            }
+        }
+        data = {}
+        form = Form(schema)
+        form.validate(data)
+        self.assertEqual(len(form.errors.section_errors), 1)
+        self.assertTrue('missing' in form.errors.section_errors[0].lower())
+
+    def test_missing_xor(self):
+        schema = {
+            XOr: {
+                'one': 1,
+                'two': 2,
+            }
+        }
+        data = {}
+        form = Form(schema)
+        form.validate(data)
+        self.assertEqual(len(form.errors.section_errors), 1)
+        self.assertTrue('missing' in form.errors.section_errors[0].lower())
+
+    def test_missing_in_if(self):
+        schema = {
+            Optional('one'): 1,
+            If([['one']], 'two'): 2
+        }
+        data = {'one': 1}
+        form = Form(schema)
+        form.validate(data)
+        self.assertEqual(len(form.errors.section_errors), 1)
+        self.assertTrue('missing' in form.errors.section_errors[0].lower())
+
+    #TODO: test missing keys
+    #TODO: test missing value in OR, XOR ✓
+    #TODO: test missing value in If
+    #TODO: test value exists if If condition not satisfied
+    #TODO: test more than one value in XOR
+    #TODO: test missing If statement value (none or not all paths exist)
 
 if __name__ == "__main__":
     unittest.main()
