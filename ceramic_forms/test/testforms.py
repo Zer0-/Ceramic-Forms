@@ -1,5 +1,5 @@
 import unittest
-from ceramic_forms.form import Form, Optional, Or, XOr, If
+from ceramic_forms.form import Form, Optional, Or, XOr, If, And
 
 class TestFormValidation(unittest.TestCase):
 
@@ -220,12 +220,23 @@ class TestFormValidationFailure(unittest.TestCase):
         self.assertEqual(len(form.errors.section_errors), 1)
         self.assertTrue('missing' in form.errors.section_errors[0].lower())
 
-    #TODO: test missing keys
-    #TODO: test missing value in OR, XOR ✓
-    #TODO: test missing value in If
     #TODO: test value exists if If condition not satisfied
     #TODO: test more than one value in XOR
     #TODO: test missing If statement value (none or not all paths exist)
+
+class TestValueValidators(unittest.TestCase):
+
+    def test_function_pass(self):
+        schema = {
+            'one': len,
+            'two': str,
+        }
+        data = {'one': [0, 1], 'two': 'asdf'}
+        form = Form(schema)
+        form.validate(data)
+        self.assertFalse(form.errors)
+        self.assertFalse(form.errors.section_errors)
+        self.assertEqual(data, form.cleaned)
 
 if __name__ == "__main__":
     unittest.main()

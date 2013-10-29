@@ -13,6 +13,10 @@ class If:
         self.paths = paths
         self.key = key
 
+class And:
+    def __init__(self, *conditions):
+        self.conditions = conditions
+
 class FormErr(dict):
     def __init__(self, *args, **kwargs):
         self.section_errors = []
@@ -83,25 +87,34 @@ def validate_key(key, suspicious, reference_value, cleaned, errors, entire_struc
         errors.section_errors.append("Missing {}".format(key))
 
 def validate_value(key, value, reference_value, cleaned, errors, entire_structure):
-    is_valid = True
     if isinstance(reference_value, dict):
         next_level_errors = FormErr()
         next_level_cleaned = {}
         validate(reference_value, value, next_level_cleaned, next_level_errors, entire_structure)
         if next_level_errors:
             errors[key] = next_level_errors
-            is_valid = False
         if next_level_cleaned:
             cleaned[key] = next_level_cleaned
+    elif callable(reference_value):
+        try:
+            result = reference_value(value)
+        except Exception as e:
+            errors[key].append(str(e))
+            return
+        if result:
+            cleaned[key] = value
+        else:
+            errors[key].append("{} did not match {}".format(
+                reference_value.__name__,
+                value
+            ))
     else:
         if value != reference_value:
-            is_valid = False
             errors[key].append('{} should equal {}'.format(
                     value, reference_value
             ))
         else:
             cleaned[key] = value
-    return is_valid
 
 def validate(schema, suspicious, cleaned, errors, entire_structure):
     for key, reference_value in schema.items():
