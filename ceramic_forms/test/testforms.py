@@ -17,7 +17,8 @@ class TestFormValidation(unittest.TestCase):
             4: True
         }
         form = Form(schema)
-        form.validate(data)
+        valid = form.validate(data)
+        self.assertTrue(valid)
         self.assertEqual(data, form.cleaned)
         self.assertFalse(form.errors)
 
@@ -31,7 +32,8 @@ class TestFormValidation(unittest.TestCase):
             }
         }
         form = Form(schema)
-        form.validate(schema)
+        valid = form.validate(schema)
+        self.assertTrue(valid)
         self.assertEqual(schema, form.cleaned)
         self.assertFalse(form.errors)
 
@@ -39,11 +41,13 @@ class TestFormValidation(unittest.TestCase):
         schema = {Optional('key'): 'value'}
         data = {'key': 'value'}
         form = Form(schema)
-        form.validate(data)
+        valid = form.validate(data)
+        self.assertTrue(valid)
         self.assertEqual(data, form.cleaned)
         self.assertFalse(form.errors)
         data = {}
-        form.validate(data)
+        valid = form.validate(data)
+        self.assertTrue(valid)
         self.assertEqual(data, form.cleaned)
         self.assertFalse(form.errors)
 
@@ -65,7 +69,8 @@ class TestFormValidation(unittest.TestCase):
             {1: 1, 3: 3, '2': 2},
             {2: 2, '1': 1},
         ]:
-            form.validate(data)
+            valid = form.validate(data)
+            self.assertTrue(valid)
             self.assertEqual(data, form.cleaned)
             self.assertFalse(form.errors)
 
@@ -76,6 +81,7 @@ class TestFormValidation(unittest.TestCase):
             Or: {
                 'opt1': 1,
                 'opt2': 2,
+                'opt3': 3,
             },
             If([[2]], "conditional"): "exists",
             If([['opt1']], "opt1_condition"): True,
@@ -84,7 +90,7 @@ class TestFormValidation(unittest.TestCase):
         form = Form(schema)
         for data in [
             {'key': 'value', 'opt2': 2},
-            {'key': 'value', 2: 'two', 'conditional': "exists"},
+            {'key': 'value', 2: 'two', 'conditional': "exists", 'opt3': 3},
             {
                 'key': 'value',
                 2: 'two',
@@ -93,9 +99,11 @@ class TestFormValidation(unittest.TestCase):
                 'compound_if': True
             }
         ]:
-            form.validate(data)
+            valid = form.validate(data)
+            self.assertTrue(valid)
             self.assertEqual(data, form.cleaned)
             self.assertFalse(form.errors)
+            self.assertFalse(len(form.errors.section_errors))
 
     def test_if_noexist(self):
         schema = {
@@ -104,7 +112,8 @@ class TestFormValidation(unittest.TestCase):
         }
         data = {}
         form = Form(schema)
-        form.validate(data)
+        valid = form.validate(data)
+        self.assertTrue(valid)
         self.assertFalse(form.errors)
         self.assertFalse(form.errors.section_errors)
     #TODO: test nested keys
