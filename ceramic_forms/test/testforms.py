@@ -238,5 +238,28 @@ class TestValueValidators(unittest.TestCase):
         self.assertFalse(form.errors.section_errors)
         self.assertEqual(data, form.cleaned)
 
+    def test_And_pass(self):
+        schema = {
+            'a': And(len, str),
+            'b': And(str, len, 'bee')
+        }
+        data = {'a': 'eh', 'b': 'bee'}
+        form = Form(schema)
+        form.validate(data)
+        self.assertFalse(form.errors)
+        self.assertFalse(form.errors.section_errors)
+        self.assertEqual(data, form.cleaned)
+
+    def test_And_fail(self):
+        schema = {
+            'a': And(str, lambda x: len(x) == 3),
+        }
+        data = {'a': '12'}
+        form = Form(schema)
+        form.validate(data)
+        self.assertTrue(len(form.errors) == 1)
+        self.assertFalse(form.errors.section_errors)
+        self.assertEqual({}, form.cleaned)
+
 if __name__ == "__main__":
     unittest.main()

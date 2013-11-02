@@ -47,15 +47,18 @@ def path_exists(path, structure):
     return True
 
 def validate_key(key, suspicious, reference_value, cleaned, errors, entire_structure):
+    validated = True
     if isinstance(key, Optional):
         key = key.key
         if key in suspicious:
-            validate_key(key, suspicious, reference_value, cleaned, errors, entire_structure)
+            validated = validate_key(key, suspicious, reference_value,
+                                     cleaned, errors, entire_structure)
     elif key == Or:
         validated = False
         for orkey, orvalue in reference_value.items():
             if orkey in suspicious:
-                validate_key(orkey, suspicious, orvalue, cleaned, errors, entire_structure)
+                validate_key(orkey, suspicious, orvalue, cleaned,
+                             errors, entire_structure)
                 validated = True
         if not validated:
             errors.section_errors.append(
@@ -69,9 +72,13 @@ def validate_key(key, suspicious, reference_value, cleaned, errors, entire_struc
         if validated == 0:
             errors.section_errors.append(
                 "Missing one of {}".format(reference_value.keys()))
+            validated = False
         elif validated > 1:
             errors.section_errors.append(
                 "Only one of {} permitted".format(reference_value.keys()))
+            validated = False
+        else:
+            validated = True
     elif isinstance(key, If):
         exists = True
         for path in key.paths:
@@ -79,28 +86,41 @@ def validate_key(key, suspicious, reference_value, cleaned, errors, entire_struc
                 exists = False
                 break
         if exists:
-            validate_key(key.key, suspicious, reference_value, cleaned, errors, entire_structure)
+            validated = validate_key(key.key, suspicious, reference_value,
+                                     cleaned, errors, entire_structure)
         #TODO: what happens if the key exists, but paths weren't found?
     elif key in suspicious:
-        validate_value(key, suspicious[key], reference_value, cleaned, errors, entire_structure)
+        validated = validate_value(key, suspicious[key], reference_value,
+                                   cleaned, errors, entire_structure)
     else:
         errors.section_errors.append("Missing {}".format(key))
+        validated = False
+    return validated
 
 def validate_value(key, value, reference_value, cleaned, errors, entire_structure):
+    valid = True
     if isinstance(reference_value, dict):
         next_level_errors = FormErr()
         next_level_cleaned = {}
-        validate(reference_value, value, next_level_cleaned, next_level_errors, entire_structure)
-        if next_level_errors:
+        valid = validate(reference_value, value, next_level_cleaned,
+                         next_level_errors, entire_structure)
+        if not valid:
             errors[key] = next_level_errors
         if next_level_cleaned:
             cleaned[key] = next_level_cleaned
+    elif isinstance(reference_value, And):
+        for condition in reference_value.conditions:
+            if not validate_value(key, value, condition, cleaned,
+                                  errors, entire_structure):
+                valid = False
+            if not valid:
+                del cleaned[key]
     elif callable(reference_value):
         try:
             result = reference_value(value)
         except Exception as e:
             errors[key].append(str(e))
-            return
+            return False
         if result:
             cleaned[key] = value
         else:
@@ -108,17 +128,29 @@ def validate_value(key, value, reference_value, cleaned, errors, entire_structur
                 reference_value.__name__,
                 value
             ))
+            valid = False
     else:
         if value != reference_value:
             errors[key].append('{} should equal {}'.format(
                     value, reference_value
             ))
+            valid = False
         else:
             cleaned[key] = value
+    return valid
 
 def validate(schema, suspicious, cleaned, errors, entire_structure):
+    #TODO: modify the whole thing to return True for validated and False for invalid.
+    valid = True
     for key, reference_value in schema.items():
-        validate_key(key, suspicious, reference_value, cleaned, errors, entire_structure)
+        if not validate_key(key,
+                            suspicious,
+                            reference_value,
+                            cleaned,
+                            errors,
+                            entire_structure):
+            valid = False
+    return valid
 
 class Form:
     def __init__(self, schema):
@@ -127,5 +159,6 @@ class Form:
     def validate(self, suspicious):
         self.cleaned = {}
         self.errors = FormErr()
-        validate(self.schema, suspicious, self.cleaned, self.errors, suspicious)
+        return validate(self.schema, suspicious, self.cleaned,
+                        self.errors, suspicious)
 
