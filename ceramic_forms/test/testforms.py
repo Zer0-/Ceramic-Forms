@@ -242,7 +242,8 @@ class TestValueValidators(unittest.TestCase):
         }
         data = {'one': [0, 1], 'two': 'asdf'}
         form = Form(schema)
-        form.validate(data)
+        valid = form.validate(data)
+        self.assertTrue(valid)
         self.assertFalse(form.errors)
         self.assertFalse(form.errors.section_errors)
         self.assertEqual(data, form.cleaned)
@@ -254,7 +255,8 @@ class TestValueValidators(unittest.TestCase):
         }
         data = {'a': 'eh', 'b': 'bee'}
         form = Form(schema)
-        form.validate(data)
+        valid = form.validate(data)
+        self.assertTrue(valid)
         self.assertFalse(form.errors)
         self.assertFalse(form.errors.section_errors)
         self.assertEqual(data, form.cleaned)
@@ -265,7 +267,8 @@ class TestValueValidators(unittest.TestCase):
         }
         data = {'a': '12'}
         form = Form(schema)
-        form.validate(data)
+        valid = form.validate(data)
+        self.assertFalse(valid)
         self.assertTrue(len(form.errors) == 1)
         self.assertFalse(form.errors.section_errors)
         self.assertEqual({}, form.cleaned)

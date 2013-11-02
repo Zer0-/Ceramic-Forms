@@ -140,7 +140,6 @@ def validate_value(key, value, reference_value, cleaned, errors, entire_structur
     return valid
 
 def validate(schema, suspicious, cleaned, errors, entire_structure):
-    #TODO: modify the whole thing to return True for validated and False for invalid.
     valid = True
     for key, reference_value in schema.items():
         if not validate_key(key,
