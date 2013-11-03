@@ -273,5 +273,27 @@ class TestValueValidators(unittest.TestCase):
         self.assertFalse(form.errors.section_errors)
         self.assertEqual({}, form.cleaned)
 
+    def test_Or_pass(self):
+        schema = {
+            'n': Or('a', 1, 3)
+        }
+        data = {'n': 3}
+        form = Form(schema)
+        valid = form.validate(data)
+        self.assertTrue(valid)
+        self.assertFalse(form.errors)
+        self.assertFalse(form.errors.section_errors)
+        self.assertEqual(data, form.cleaned)
+
+    def test_Or_fail(self):
+        schema = {
+            'n': Or('a', 1, 3)
+        }
+        data = {'n': 4}
+        form = Form(schema)
+        valid = form.validate(data)
+        self.assertFalse(valid)
+        self.assertTrue(form.errors)
+
 if __name__ == "__main__":
     unittest.main()

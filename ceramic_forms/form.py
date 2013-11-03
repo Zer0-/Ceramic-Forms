@@ -3,10 +3,12 @@ class Optional:
         self.key = key
 
 class Or:
-    pass
+    def __init__(self, *conditions):
+        self.conditions = conditions
 
 class XOr:
-    pass
+    def __init__(self, *conditions):
+        self.conditions = conditions
 
 class If:
     def __init__(self, paths, key):
@@ -97,7 +99,8 @@ def validate_key(key, suspicious, reference_value, cleaned, errors, entire_struc
         validated = False
     return validated
 
-def validate_value(key, value, reference_value, cleaned, errors, entire_structure):
+def validate_value(key, value, reference_value,
+                       cleaned, errors, entire_structure):
     valid = True
     if isinstance(reference_value, dict):
         next_level_errors = FormErr()
@@ -115,6 +118,19 @@ def validate_value(key, value, reference_value, cleaned, errors, entire_structur
                 valid = False
             if not valid:
                 del cleaned[key]
+    elif isinstance(reference_value, Or):
+        valid = False
+        dummy_err = FormErr()
+        for condition in reference_value.conditions:
+            if validate_value(key, value, condition, cleaned,
+                                  dummy_err, entire_structure):
+                valid = True
+                break
+        if not valid:
+            errors[key].append('{} is not valid for any {}'.format(
+                value,
+                reference_value.conditions
+            ))
     elif callable(reference_value):
         try:
             result = reference_value(value)
