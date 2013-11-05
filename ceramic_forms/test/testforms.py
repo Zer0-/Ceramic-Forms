@@ -294,6 +294,70 @@ class TestValueValidators(unittest.TestCase):
         valid = form.validate(data)
         self.assertFalse(valid)
         self.assertTrue(form.errors)
+        self.assertFalse(form.errors.section_errors)
+
+class TestSequenceValidation(unittest.TestCase):
+
+    def test_simple_sequence(self):
+        schema = [1]
+        form = Form(schema)
+        for data in [
+            [1],
+            [1, 1, 1],
+            [1 for i in range(10)]
+        ]:
+            valid = form.validate(data)
+            self.assertTrue(valid)
+            self.assertEqual(form.cleaned, data)
+            self.assertFalse(form.errors)
+            self.assertFalse(form.errors.section_errors)
+
+    def test_multiple_val_sequence(self):
+        schema = [1, '1']
+        form = Form(schema)
+        for data in [
+            [1],
+            [1, 1, 1],
+            ['1'],
+            [1, '1'],
+            [1, 1, '1', '1', 1]
+        ]:
+            valid = form.validate(data)
+            self.assertTrue(valid)
+            self.assertFalse(form.errors)
+            self.assertFalse(form.errors.section_errors)
+
+    def test_wrong_value(self):
+        schema = [1]
+        form = Form(schema)
+        for data in [
+            ['1'],
+            ['1' for i in range(10)],
+            [2, 3, 4],
+        ]:
+            valid = form.validate(data)
+            self.assertFalse(valid)
+            self.assertTrue(form.errors)
+            self.assertFalse(form.errors.section_errors)
+
+    def test_combinations_of_values(self):
+        pairs = [
+            ([[1]], [[1], [1], [1, 1]]),
+            ([And(str, lambda x: len(x) == 3)], ['the', 'ick', 'tan'])
+        ]
+        for schema, data in pairs:
+            print(schema)
+            print(data)
+            form = Form(schema)
+            valid = form.validate(data)
+            print(form.errors)
+            self.assertTrue(valid)
+            self.assertFalse(form.errors)
+            self.assertFalse(form.errors.section_errors)
+
+    #TODO: test nested
+    #TODO: test nested map or seq within map
+    #TODO: test AND/OR with seq
 
 if __name__ == "__main__":
     unittest.main()
