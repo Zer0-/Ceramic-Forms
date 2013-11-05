@@ -19,6 +19,10 @@ class And:
     def __init__(self, *conditions):
         self.conditions = conditions
 
+class Use:
+    def __init__(self, fn):
+        self.fn = fn
+
 class FormErr(dict):
     def __init__(self, *args, **kwargs):
         self.section_errors = []
@@ -126,13 +130,21 @@ def validate_value(key, value, reference_value,
             errors[key] = next_level_errors
         if next_level_cleaned:
             append_dict_or_list(cleaned, key, next_level_cleaned)
+    elif isinstance(reference_value, Use):
+        try:
+            result = reference_value.fn(value)
+        except Exception as e:
+            errors[key].append(str(e))
+            return False
+        append_dict_or_list(cleaned, key, result)
     elif isinstance(reference_value, And):
         for condition in reference_value.conditions:
             if not validate_value(key, value, condition, cleaned,
                                   errors, entire_structure):
                 valid = False
-            if not valid:
                 del cleaned[key]
+            else:
+                value = cleaned[key]
     elif isinstance(reference_value, Or):
         valid = False
         dummy_err = FormErr()
@@ -206,7 +218,6 @@ def validate_map(schema, suspicious, cleaned, errors, entire_structure):
             valid = False
     return valid
 
-#TODO: add Use
 def validate(schema, suspicious, cleaned, errors, entire_structure):
     valid = True
     if isinstance(schema, dict):

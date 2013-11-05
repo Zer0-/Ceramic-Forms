@@ -1,5 +1,5 @@
 import unittest
-from ceramic_forms.form import Form, Optional, Or, XOr, If, And
+from ceramic_forms.form import Form, Optional, Or, XOr, If, And, Use
 
 class TestFormValidation(unittest.TestCase):
 
@@ -348,6 +348,7 @@ class TestSequenceValidation(unittest.TestCase):
             ['1'],
             ['1' for i in range(10)],
             [2, 3, 4],
+            [1, 1, 1, 2]
         ]:
             valid = form.validate(data)
             self.assertFalse(valid)
@@ -368,7 +369,47 @@ class TestSequenceValidation(unittest.TestCase):
             self.assertFalse(form.errors)
             self.assertFalse(form.errors.section_errors)
 
-    #TODO: test AND/OR with seq
+class TestUseValidator(unittest.TestCase):
+
+    def test_use_int(self):
+        schema = {'use': Use(int)}
+        data = {'use': '666'}
+        form = Form(schema)
+        valid = form.validate(data)
+        self.assertEqual({'use': 666}, form.cleaned)
+        self.assertTrue(valid)
+        self.assertFalse(form.errors)
+        self.assertFalse(form.errors.section_errors)
+
+    def test_use_sequence(self):
+        schema = [Use(int)]
+        data = [1, '2', '34']
+        form = Form(schema)
+        valid = form.validate(data)
+        self.assertEqual([1, 2, 34], form.cleaned)
+        self.assertTrue(valid)
+        self.assertFalse(form.errors)
+        self.assertFalse(form.errors.section_errors)
+
+    def test_use_fail(self):
+        schema = [Use(lambda x: x + 10)]
+        data = [1, 2, '3']
+        form = Form(schema)
+        valid = form.validate(data)
+        self.assertFalse(valid)
+        self.assertTrue(len(form.errors)==1)
+        self.assertTrue(form.errors[2])
+        self.assertFalse(form.errors.section_errors)
+
+    def test_use_with_and(self):
+        schema = {'u': And(Use(int), lambda x: x%2 == 0)}
+        data = {'u': '666'}
+        form = Form(schema)
+        valid = form.validate(data)
+        self.assertEqual({'u': 666}, form.cleaned)
+        self.assertTrue(valid)
+        self.assertFalse(form.errors)
+        self.assertFalse(form.errors.section_errors)
 
 if __name__ == "__main__":
     unittest.main()
