@@ -146,10 +146,18 @@ def validate_value(key, value, reference_value,
                 value,
                 reference_value.conditions
             ))
+    elif type(reference_value) is type:
+        if type(value) is reference_value:
+            append_dict_or_list(cleaned, key, value)
+        else:
+            errors[key].append("{} must be of type {}".format(
+                value, reference_value.__name__
+            ))
+            valid = False
     elif callable(reference_value):
         try:
             result = reference_value(value)
-        except Exception as e:
+        except ValueError as e:
             errors[key].append(str(e))
             return False
         if result:

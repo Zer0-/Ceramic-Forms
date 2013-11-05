@@ -239,14 +239,28 @@ class TestValueValidators(unittest.TestCase):
         schema = {
             'one': len,
             'two': str,
+            'three': int
         }
-        data = {'one': [0, 1], 'two': 'asdf'}
+        data = {'one': [0, 1], 'two': 'asdf', 'three': 0}
         form = Form(schema)
         valid = form.validate(data)
         self.assertTrue(valid)
         self.assertFalse(form.errors)
         self.assertFalse(form.errors.section_errors)
         self.assertEqual(data, form.cleaned)
+
+    def test_function_fail(self):
+        schema = {
+            'two': str,
+            'three': int
+        }
+        data = {'two': 5, 'three': '0'}
+        form = Form(schema)
+        valid = form.validate(data)
+        self.assertFalse(valid)
+        self.assertTrue(len(form.errors) == 2)
+        self.assertFalse(form.errors.section_errors)
+        self.assertEqual({}, form.cleaned)
 
     def test_And_pass(self):
         schema = {
@@ -343,20 +357,17 @@ class TestSequenceValidation(unittest.TestCase):
     def test_combinations_of_values(self):
         pairs = [
             ([[1]], [[1], [1], [1, 1]]),
-            ([And(str, lambda x: len(x) == 3)], ['the', 'ick', 'tan'])
+            ([And(str, lambda x: len(x) == 3)], ['the', 'ick', 'tan']),
+            ([{'a': int}], [{'a': 1}, {'a': 2}]),
+            ({'a': [int]}, {'a': range(10)})
         ]
         for schema, data in pairs:
-            print(schema)
-            print(data)
             form = Form(schema)
             valid = form.validate(data)
-            print(form.errors)
             self.assertTrue(valid)
             self.assertFalse(form.errors)
             self.assertFalse(form.errors.section_errors)
 
-    #TODO: test nested
-    #TODO: test nested map or seq within map
     #TODO: test AND/OR with seq
 
 if __name__ == "__main__":
