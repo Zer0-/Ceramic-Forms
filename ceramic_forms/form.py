@@ -218,24 +218,6 @@ def validate_map(schema, suspicious, cleaned, errors, entire_structure):
             valid = False
     return valid
 
-def validate(schema, suspicious, cleaned, errors, entire_structure):
-    valid = True
-    if isinstance(schema, dict):
-        for key, reference_value in schema.items():
-            if not validate_key(key,
-                                suspicious,
-                                reference_value,
-                                cleaned,
-                                errors,
-                                entire_structure):
-                valid = False
-    elif isinstance(schema, list):
-        valid = validate_sequence(schema, suspicious,
-                                  cleaned, errors, entire_structure)
-    else:
-        raise ValueError("Schema must consist of a list or dict based structure.")
-    return valid
-
 class Form:
     def __init__(self, schema):
         self.schema = schema
