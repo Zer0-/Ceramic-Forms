@@ -53,6 +53,7 @@ class TestFormValidation(unittest.TestCase):
 
     def test_conditional_key(self):
         schema = {
+            'tip': 'top',
             Or: {
                 1: 1,
                 2: 2,
@@ -66,8 +67,8 @@ class TestFormValidation(unittest.TestCase):
         }
         form = Form(schema)
         for data in [
-            {1: 1, 3: 3, '2': 2},
-            {2: 2, '1': 1},
+            {'tip': 'top', 1: 1, 3: 3, '2': 2},
+            {'tip': 'top', 2: 2, '1': 1},
         ]:
             valid = form.validate(data)
             self.assertTrue(valid)

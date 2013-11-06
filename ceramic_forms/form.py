@@ -202,7 +202,7 @@ def validate_value(key, value, reference_value,
     else:
         if value != reference_value:
             errors[key].append('{} should equal {}'.format(
-                    value, reference_value
+                    repr(value), repr(reference_value)
             ))
             valid = False
         else:
@@ -210,20 +210,22 @@ def validate_value(key, value, reference_value,
     return valid
 
 def validate_sequence(schema, suspicious, cleaned, errors, entire_structure):
+    all_valid = True
     for i, value in enumerate(suspicious):
         valid = False
+        cleanerr = False
         for validator in schema:
             if validate_value(i, value, validator, cleaned,
-                                  FormErr(), entire_structure):
+                                  errors, entire_structure):
                 valid = True
                 break
+            else:
+                cleanerr = True
+        if valid and cleanerr:
+            del errors[i]
         if not valid:
-            errors[i].append('{} is not valid for any {}'.format(
-                value,
-                schema
-            ))
-            return False
-    return True
+            all_valid = False
+    return all_valid
 
 def validate_map(schema, suspicious, cleaned, errors, entire_structure):
     valid = True
@@ -238,6 +240,7 @@ def validate_map(schema, suspicious, cleaned, errors, entire_structure):
     return valid
 
 #TODO: Optional, If as key.
+#TODO: Optional should check existence, not validation.
 class Form:
     def __init__(self, schema):
         self.schema = schema
