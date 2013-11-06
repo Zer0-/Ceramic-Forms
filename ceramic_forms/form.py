@@ -23,6 +23,11 @@ class Use:
     def __init__(self, fn):
         self.fn = fn
 
+class Msg:
+    def __init__(self, validator, errmsg):
+        self.validator = validator
+        self.errmsg = errmsg
+
 class FormErr(dict):
     def __init__(self, *args, **kwargs):
         self.section_errors = []
@@ -38,10 +43,10 @@ class FormErr(dict):
     def __repr__(self):
         return "<[{}]{{{}}}>".format(
             ", ".join(self.section_errors),
-            "\n".join(["{}:{}".format(key, value) for key, value in self.items()])
+            "\n".join(["{}: {}".format(key, value) for key, value in self.items()])
         )
 
-    #TODO: len should calculate all errors recursively? at least include section_errors
+    #TODO: len should calculate all errors recursively? at least include section_errors?
 
 def path_exists(path, structure):
     place = structure
@@ -95,6 +100,11 @@ def validate_key(key, suspicious, reference_value, cleaned, errors, entire_struc
             validated = validate_key(key.key, suspicious, reference_value,
                                      cleaned, errors, entire_structure)
         #TODO: what happens if the key exists, but paths weren't found?
+    elif isinstance(key, Msg):
+        validated = validate_key(key.validator, suspicious, reference_value,
+                             cleaned, FormErr(), entire_structure)
+        if not validated:
+            errors.section_errors.append(key.errmsg)
     elif key in suspicious:
         validated = validate_value(key, suspicious[key], reference_value,
                                    cleaned, errors, entire_structure)
@@ -158,6 +168,11 @@ def validate_value(key, value, reference_value,
                 value,
                 reference_value.conditions
             ))
+    elif isinstance(reference_value, Msg):
+        if not validate_value(key, value, reference_value.validator, cleaned,
+                                  FormErr(), entire_structure):
+            errors[key].append(reference_value.errmsg)
+            valid = False
     elif type(reference_value) is type:
         if type(value) is reference_value:
             append_dict_or_list(cleaned, key, value)
@@ -218,6 +233,7 @@ def validate_map(schema, suspicious, cleaned, errors, entire_structure):
             valid = False
     return valid
 
+#TODO: Optional, If as key.
 class Form:
     def __init__(self, schema):
         self.schema = schema

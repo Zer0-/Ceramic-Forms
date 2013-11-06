@@ -1,5 +1,5 @@
 import unittest
-from ceramic_forms.form import Form, Optional, Or, XOr, If, And, Use
+from ceramic_forms.form import Form, Optional, Or, XOr, If, And, Use, Msg
 
 class TestFormValidation(unittest.TestCase):
 
@@ -369,6 +369,8 @@ class TestSequenceValidation(unittest.TestCase):
             self.assertFalse(form.errors)
             self.assertFalse(form.errors.section_errors)
 
+    #TODO: If path with sequences... what to do?
+
 class TestUseValidator(unittest.TestCase):
 
     def test_use_int(self):
@@ -410,6 +412,53 @@ class TestUseValidator(unittest.TestCase):
         self.assertTrue(valid)
         self.assertFalse(form.errors)
         self.assertFalse(form.errors.section_errors)
+
+class TestMsgWrapper(unittest.TestCase):
+
+    def test_msg_val(self):
+        msg = 'not b'
+        data = {'a': 'c'}
+        for validator in [
+            'b',
+            int,
+            lambda x: x.upper() == x,
+            Msg('b', 'what')
+        ]:
+            schema = {'a': Msg(validator, msg)}
+            form = Form(schema)
+            self.assertFalse(form.validate(data))
+            self.assertEqual(form.errors['a'][0], msg)
+            self.assertTrue(len(form.errors)==1)
+
+    def test_key_wrap_if(self):
+        msg = 'oh no!'
+        schema = {
+            1: 1,
+            Msg(If([(1,)], 2), msg): 2,
+        }
+        data = {1: 1}
+        form = Form(schema)
+        valid = form.validate(data)
+        self.assertFalse(valid)
+        self.assertEqual(form.errors.section_errors[0], msg)
+        self.assertFalse(form.errors)
+
+    def test_key_wrap_or(self):
+        msg = 'noooooor'
+        schema = {
+            Msg(Or, msg): {
+                'a': 0,
+                'b': 2
+            }
+        }
+        data = {}
+        form = Form(schema)
+        valid = form.validate(data)
+        self.assertFalse(valid)
+        self.assertEqual(form.errors.section_errors[0], msg)
+        self.assertFalse(form.errors)
+
+#TODO: make sure msg wrap doesn't screw up any nested validation.
 
 if __name__ == "__main__":
     unittest.main()
