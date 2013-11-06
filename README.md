@@ -61,3 +61,55 @@ schema = {'a': Or(1, 'asdf')}
 ```
 
 As you can guess this will validate "a" being either one or the string "asdf"
+
+##Errors
+
+When things go wrong Ceramic does not throw exceptions - rather it saves all the errors in a structure.
+The FormErr structure matches the schema structure and you can navigate it to view the errors for a given field:
+
+```python
+schema = {
+    'customer_id': int,
+    'name': str,
+    Optional('phone_numbers'): [
+        {
+            'number': Msg(And(str, lambda x: len(x) > 6),
+                          'Invalid phone number!'),
+            'type': Or('cell', 'home')
+        }
+    ],
+    Or: {
+        'street_address': str,
+        'postal_code': And(str, lambda x: len(x)==6)
+    },
+    If([['phone_numbers'], ['postal_code']], 'special_condition'): And(
+        Use(int),
+        lambda x: x%2 == 0
+    )
+}
+
+data = {
+    'customer_id': '9001',
+    'name': 'Eenis',
+    'phone_numbers': [{'number': '666', 'type': 'cell'}],
+    'postal_code': '123456'
+}
+
+form = Form(schema)
+print(form.validate(data))
+#>>>False
+print(form.errors['customer_id'])
+#>>>['9001 must be of type int']
+#errors that pertain to the entire map/sequence are stored in section_errors
+print(form.errors.section_errors)
+#>>>['Missing special_condition']
+print(form.errors['phone_numbers'])
+#>>><[]{0: <[]{number: ['Invalid phone number!']}>}>
+#Since phone numbers is a structure itself and not a value we get a structure
+#as an error...
+```
+
+###Thanks to
+
+[Schema](https://github.com/halst/schema) as it heavily influenced the development of Ceramic (though I think Schema
+itself may be based on another lib, I can't find it right now)
