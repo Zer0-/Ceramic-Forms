@@ -156,7 +156,10 @@ def validate_value(key, value, reference_value,
             if not validate_value(key, value, condition, cleaned,
                                   errors, entire_structure):
                 valid = False
-                del cleaned[key]
+                try:
+                    del cleaned[key]
+                except (KeyError, IndexError):
+                    pass
             else:
                 value = cleaned[key]
     elif isinstance(reference_value, Or):

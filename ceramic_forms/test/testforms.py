@@ -279,12 +279,13 @@ class TestValueValidators(unittest.TestCase):
     def test_And_fail(self):
         schema = {
             'a': And(str, lambda x: len(x) == 3),
+            'b': And(int, 4),
         }
-        data = {'a': '12'}
+        data = {'a': '12', 'b': '4'}
         form = Form(schema)
         valid = form.validate(data)
         self.assertFalse(valid)
-        self.assertTrue(len(form.errors) == 1)
+        self.assertEqual(len(form.errors), 2)
         self.assertFalse(form.errors.section_errors)
         self.assertEqual({}, form.cleaned)
 
