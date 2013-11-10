@@ -195,25 +195,55 @@ class TestFormValidationFailure(unittest.TestCase):
 
     def test_missing_or(self):
         schema = {
+            'pre': 'a',
             Or: {
                 'one': 1,
                 'two': 2,
             }
         }
-        data = {}
+        data = {'pre': 'a'}
         form = Form(schema)
-        form.validate(data)
+        valid = form.validate(data)
+        self.assertFalse(valid)
         self.assertEqual(len(form.errors.section_errors), 1)
         self.assertTrue('missing' in form.errors.section_errors[0].lower())
 
+    def test_failed_or(self):
+        schema = {
+            'pre': 'a',
+            Or: {
+                'one': Use(int),
+                'two': lambda x: x.type in [1, 2]
+            }
+        }
+        data = {'pre': 'a', 'one': 'asdf', 'two': 'asdf'}
+        form = Form(schema)
+        valid = form.validate(data)
+        self.assertFalse(valid)
+
+    def test_failed_xor(self):
+        schema = {
+            'pre': 'a',
+            XOr: {
+                'one': Use(int),
+                'two': lambda x: x.type in [1, 2]
+            }
+        }
+        data = {'pre': 'a', 'one': 'asdf', 'two': 'asdf'}
+        form = Form(schema)
+        valid = form.validate(data)
+        self.assertFalse(valid)
+
+
     def test_missing_xor(self):
         schema = {
+            'pre': 'a',
             XOr: {
                 'one': 1,
                 'two': 2,
             }
         }
-        data = {}
+        data = {'pre': 'a'}
         form = Form(schema)
         form.validate(data)
         self.assertEqual(len(form.errors.section_errors), 1)
@@ -253,13 +283,14 @@ class TestValueValidators(unittest.TestCase):
     def test_function_fail(self):
         schema = {
             'two': str,
-            'three': int
+            'three': int,
+            '4': lambda x: x.type in ['one', 'two']
         }
-        data = {'two': 5, 'three': '0'}
+        data = {'two': 5, 'three': '0', '4': 10}
         form = Form(schema)
         valid = form.validate(data)
         self.assertFalse(valid)
-        self.assertTrue(len(form.errors) == 2)
+        self.assertEqual(len(form.errors), 3)
         self.assertFalse(form.errors.section_errors)
         self.assertEqual({}, form.cleaned)
 

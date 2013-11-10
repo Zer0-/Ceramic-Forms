@@ -72,9 +72,9 @@ def validate_key(key, suspicious, reference_value, cleaned, errors, entire_struc
         validated = False
         for orkey, orvalue in reference_value.items():
             if orkey in suspicious:
-                validate_key(orkey, suspicious, orvalue, cleaned,
-                             errors, entire_structure)
-                validated = True
+                if validate_key(orkey, suspicious, orvalue, cleaned,
+                                errors, entire_structure):
+                    validated = True
         if not validated:
             errors.section_errors.append(
                 "Missing any of {}".format(reference_value.keys()))
@@ -82,8 +82,9 @@ def validate_key(key, suspicious, reference_value, cleaned, errors, entire_struc
         validated = 0
         for orkey, orvalue in reference_value.items():
             if orkey in suspicious:
-                validate_key(orkey, suspicious, orvalue, cleaned, errors, entire_structure)
-                validated += 1
+                if validate_key(orkey, suspicious, orvalue,
+                                cleaned, errors, entire_structure):
+                    validated += 1
         if validated == 0:
             errors.section_errors.append(
                 "Missing one of {}".format(reference_value.keys()))
@@ -191,7 +192,8 @@ def validate_value(key, value, reference_value,
     elif callable(reference_value):
         try:
             result = reference_value(value)
-        except ValueError as e:
+        except Exception as e:
+            #Bug hunting might have just gotten harder with a catchall Exception.
             errors[key].append(str(e))
             return False
         if result:
