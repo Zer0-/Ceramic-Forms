@@ -175,6 +175,31 @@ class TestFormValidationFailure(unittest.TestCase):
         for key in ['one', 2, 3, 4]:
             self.assertTrue(form.errors[key])
 
+    def test_optional_strictness(self):
+        schema = {
+            Optional('one'): And(str, lambda x: len(x) == 6)
+        }
+        data = {'one': '12345'}
+        form = Form(schema)
+        form.validate(data)
+        self.assertEqual({}, form.cleaned)
+        self.assertFalse(form.errors.section_errors)
+        self.assertEqual(len(form.errors), 1)
+
+    def test_or_strictness(self):
+        schema = {
+            Or: {
+                'one': 1,
+                'two': 2
+            }
+        }
+        data = {'one': 2}
+        form = Form(schema)
+        form.validate(data)
+        self.assertEqual({}, form.cleaned)
+        self.assertEqual(len(form.errors.section_errors), 1)
+        self.assertEqual(len(form.errors), 1)
+
     def test_missing_key(self):
         schema = {
             'one': 1,
