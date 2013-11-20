@@ -169,7 +169,8 @@ class TestFormValidationFailure(unittest.TestCase):
             4: 4,
         }
         form = Form(schema)
-        form.validate(data)
+        valid = form.validate(data)
+        self.assertFalse(valid)
         self.assertEqual({}, form.cleaned)
         self.assertTrue(form.errors)
         for key in ['one', 2, 3, 4]:
@@ -181,7 +182,8 @@ class TestFormValidationFailure(unittest.TestCase):
         }
         data = {'one': '12345'}
         form = Form(schema)
-        form.validate(data)
+        valid = form.validate(data)
+        self.assertFalse(valid)
         self.assertEqual({}, form.cleaned)
         self.assertFalse(form.errors.section_errors)
         self.assertEqual(len(form.errors), 1)
@@ -190,14 +192,16 @@ class TestFormValidationFailure(unittest.TestCase):
         schema = {
             Or: {
                 'one': 1,
-                'two': 2
+                'two': 2,
+                'three': And(Use(str), len, lambda x: x.upper() == x)
             }
         }
-        data = {'one': 2}
+        data = {'one': 1, 'three': 'BAm'}
         form = Form(schema)
-        form.validate(data)
-        self.assertEqual({}, form.cleaned)
-        self.assertEqual(len(form.errors.section_errors), 1)
+        valid = form.validate(data)
+        self.assertFalse(valid)
+        self.assertEqual({'one': 1}, form.cleaned)
+        self.assertFalse(form.errors.section_errors)
         self.assertEqual(len(form.errors), 1)
 
     def test_missing_key(self):
@@ -344,6 +348,13 @@ class TestValueValidators(unittest.TestCase):
         self.assertEqual(len(form.errors), 2)
         self.assertFalse(form.errors.section_errors)
         self.assertEqual({}, form.cleaned)
+
+    def test_and_invalid(self):
+        schema = [And(Use(str), len, lambda x: x.upper() == x)]
+        data = ['BAm']
+        form = Form(schema)
+        valid = form.validate(data)
+        self.assertFalse(valid)
 
     def test_Or_pass(self):
         schema = {

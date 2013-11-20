@@ -69,13 +69,15 @@ def validate_key(key, suspicious, reference_value, cleaned, errors, entire_struc
             validated = validate_key(key, suspicious, reference_value,
                                      cleaned, errors, entire_structure)
     elif key == Or:
-        validated = False
+        foundone = False
         for orkey, orvalue in reference_value.items():
             if orkey in suspicious:
-                if validate_key(orkey, suspicious, orvalue, cleaned,
+                foundone = True
+                if not validate_key(orkey, suspicious, orvalue, cleaned,
                                 errors, entire_structure):
-                    validated = True
-        if not validated:
+                    validated = False
+        if not foundone:
+            validated = False
             errors.section_errors.append(
                 "Missing any of {}".format(reference_value.keys()))
     elif key == XOr:
