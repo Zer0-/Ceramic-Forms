@@ -145,8 +145,7 @@ def validate_value(key, value, reference_value,
                          next_level_errors, entire_structure)
         if not valid:
             errors[key] = next_level_errors
-        if next_level_cleaned:
-            append_dict_or_list(cleaned, key, next_level_cleaned)
+        append_dict_or_list(cleaned, key, next_level_cleaned)
     elif isinstance(reference_value, Use):
         try:
             result = reference_value.fn(value)

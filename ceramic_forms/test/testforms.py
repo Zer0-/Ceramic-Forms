@@ -37,6 +37,19 @@ class TestFormValidation(unittest.TestCase):
         self.assertEqual(schema, form.cleaned)
         self.assertFalse(form.errors)
 
+    def test_blank_nested_list(self):
+        schema = {
+            'items': [Use(int)]
+        }
+        data = {
+            'items': []
+        }
+        form = Form(schema)
+        valid = form.validate(data)
+        self.assertTrue(valid)
+        self.assertEqual(data, form.cleaned)
+        self.assertFalse(form.errors)
+
     def test_optional_key(self):
         schema = {Optional('key'): 'value'}
         data = {'key': 'value'}
