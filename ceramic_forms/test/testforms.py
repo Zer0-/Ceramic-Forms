@@ -130,6 +130,19 @@ class TestFormValidation(unittest.TestCase):
         self.assertTrue(valid)
         self.assertFalse(form.errors)
         self.assertFalse(form.errors.section_errors)
+
+    def test_and_key(self):
+        schema = {
+            And(int, lambda x: x%2 == 0): 35
+        }
+        data = {
+            12: 35
+        }
+        form = Form(schema)
+        valid = form.validate(data)
+        self.assertTrue(valid)
+        self.assertFalse(form.errors)
+        self.assertFalse(form.errors.section_errors)
     #TODO: test nested keys
 
 class TestFormValidationFailure(unittest.TestCase):
@@ -151,12 +164,8 @@ class TestFormValidationFailure(unittest.TestCase):
                 'nested_two': 21,
             }
         }
-        clean = {
-            'three': {'nested_one': 'string'}
-        }
         form = Form(schema)
         form.validate(data)
-        self.assertEqual(clean, form.cleaned)
         self.assertTrue(form.errors)
         self.assertTrue(form.errors['one'])
         self.assertTrue(form.errors['two'])
@@ -184,7 +193,6 @@ class TestFormValidationFailure(unittest.TestCase):
         form = Form(schema)
         valid = form.validate(data)
         self.assertFalse(valid)
-        self.assertEqual({}, form.cleaned)
         self.assertTrue(form.errors)
         for key in ['one', 2, 3, 4]:
             self.assertTrue(form.errors[key])
@@ -334,7 +342,6 @@ class TestValueValidators(unittest.TestCase):
         self.assertFalse(valid)
         self.assertEqual(len(form.errors), 3)
         self.assertFalse(form.errors.section_errors)
-        self.assertEqual({}, form.cleaned)
 
     def test_And_pass(self):
         schema = {
@@ -360,7 +367,6 @@ class TestValueValidators(unittest.TestCase):
         self.assertFalse(valid)
         self.assertEqual(len(form.errors), 2)
         self.assertFalse(form.errors.section_errors)
-        self.assertEqual({}, form.cleaned)
 
     def test_and_invalid(self):
         schema = [And(Use(str), len, lambda x: x.upper() == x)]
@@ -490,8 +496,8 @@ class TestUseValidator(unittest.TestCase):
         data = {'u': '666'}
         form = Form(schema)
         valid = form.validate(data)
-        self.assertEqual({'u': 666}, form.cleaned)
         self.assertTrue(valid)
+        self.assertEqual({'u': 666}, form.cleaned)
         self.assertFalse(form.errors)
         self.assertFalse(form.errors.section_errors)
 
