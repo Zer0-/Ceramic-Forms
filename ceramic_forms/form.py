@@ -186,12 +186,10 @@ def validate_value(key, value, reference_value, errors, entire_structure):
             errors[key] = next_level_errors
     elif isinstance(reference_value, list):
         next_level_errors = FormErr()
-        next_level_cleaned = []
-        valid = validate_sequence(reference_value, value,
+        valid, clean = validate_sequence(reference_value, value,
                              next_level_errors, entire_structure)
         if not valid:
             errors[key] = next_level_errors
-        clean = next_level_cleaned
     elif isinstance(reference_value, Use):
         valid = True
         try:
