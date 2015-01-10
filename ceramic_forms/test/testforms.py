@@ -477,6 +477,15 @@ class TestSequenceValidation(unittest.TestCase):
             self.assertFalse(form.errors)
             self.assertFalse(form.errors.section_errors)
 
+    def test_nested_lists(self):
+        data = [[str(i), 2*i] for i in range(5)]
+        schema = [And([Use(int)], lambda x: len(x) == 2)]
+        form = Form(schema)
+        valid = form.validate(data)
+        self.assertTrue(valid)
+        self.assertFalse(form.errors)
+        self.assertFalse(form.errors.section_errors)
+
     #TODO: If path with sequences... what to do?
 
 class TestUseValidator(unittest.TestCase):
