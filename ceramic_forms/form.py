@@ -121,6 +121,30 @@ def validate_key(key, suspicious, reference_value, errors, entire_structure):
             validated = False
         else:
             validated = True
+    elif isinstance(key, And):
+        validated = True
+        for raw_key in suspicious:
+            err = FormErr()
+            valid, clean_key = validate_value(
+                0,
+                raw_key,
+                key,
+                err,
+                entire_structure
+            )
+            validated = validated and clean_key
+            if not valid:
+                errors.section_errors.extend(err[0])
+            valid, clean = validate_value(
+                raw_key,
+                suspicious[raw_key],
+                reference_value,
+                errors,
+                entire_structure
+            )
+            validated = validated and valid
+            if validated:
+                cleaned.append((clean_key, clean))
     elif isinstance(key, If):
         exists = True
         validated = True
@@ -207,6 +231,8 @@ def validate_value(key, value, reference_value, errors, entire_structure):
                                   errors, entire_structure)
             value = clean
             valid = valid and _valid
+            if not valid:
+                break
     elif isinstance(reference_value, Or):
         valid = False
         dummy_err = FormErr()
@@ -231,7 +257,7 @@ def validate_value(key, value, reference_value, errors, entire_structure):
             clean = value
         else:
             errors[key].append("{} must be of type {}".format(
-                value, reference_value.__name__
+                repr(value), reference_value.__name__
             ))
             valid = False
     elif callable(reference_value):

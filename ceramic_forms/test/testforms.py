@@ -136,13 +136,17 @@ class TestFormValidation(unittest.TestCase):
             And(int, lambda x: x%2 == 0): 35
         }
         data = {
-            12: 35
+            12: 35,
+            8: 35,
+            10: 35
         }
         form = Form(schema)
         valid = form.validate(data)
         self.assertTrue(valid)
+        self.assertEqual(data, form.cleaned)
         self.assertFalse(form.errors)
         self.assertFalse(form.errors.section_errors)
+
     #TODO: test nested keys
 
 class TestFormValidationFailure(unittest.TestCase):
@@ -309,6 +313,22 @@ class TestFormValidationFailure(unittest.TestCase):
         form.validate(data)
         self.assertEqual(len(form.errors.section_errors), 1)
         self.assertTrue('missing' in form.errors.section_errors[0].lower())
+
+    def test_and_key_fail(self):
+        schema = {
+            And(int, lambda x: x%2 == 0): 35
+        }
+        data = {
+            '6': 35,
+            3: 34,
+            2: 35
+        }
+        form = Form(schema)
+        valid = form.validate(data)
+        self.assertFalse(valid)
+        self.assertEqual(form.cleaned, {})
+        self.assertEqual(len(form.errors[3]), 1)
+        self.assertEqual(len(form.errors.section_errors), 2)
 
     #TODO: test value exists if If condition not satisfied
     #TODO: test more than one value in XOR
