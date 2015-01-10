@@ -147,7 +147,21 @@ class TestFormValidation(unittest.TestCase):
         self.assertFalse(form.errors)
         self.assertFalse(form.errors.section_errors)
 
-    #TODO: test nested keys
+    def test_bare_value(self):
+        form = Form(4)
+        valid = form.validate(4)
+        self.assertTrue(valid)
+        self.assertEqual(4, form.cleaned)
+        self.assertFalse(form.errors)
+        self.assertFalse(form.errors.section_errors)
+
+    def test_bare_use(self):
+        form = Form(Use(int))
+        valid = form.validate('4')
+        self.assertTrue(valid)
+        self.assertEqual(4, form.cleaned)
+        self.assertFalse(form.errors)
+        self.assertFalse(form.errors.section_errors)
 
 class TestFormValidationFailure(unittest.TestCase):
 
@@ -321,7 +335,7 @@ class TestFormValidationFailure(unittest.TestCase):
         data = {
             '6': 35,
             3: 34,
-            2: 35
+            2: 34
         }
         form = Form(schema)
         valid = form.validate(data)

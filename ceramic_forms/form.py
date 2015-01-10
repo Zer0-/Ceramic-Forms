@@ -125,25 +125,25 @@ def validate_key(key, suspicious, reference_value, errors, entire_structure):
         validated = True
         for raw_key in suspicious:
             err = FormErr()
-            valid, clean_key = validate_value(
+            valid_key, clean_key = validate_value(
                 0,
                 raw_key,
                 key,
                 err,
                 entire_structure
             )
-            validated = validated and clean_key
-            if not valid:
+            validated = validated and valid_key
+            if not valid_key:
                 errors.section_errors.extend(err[0])
-            valid, clean = validate_value(
+            valid_value, clean = validate_value(
                 raw_key,
                 suspicious[raw_key],
                 reference_value,
                 errors,
                 entire_structure
             )
-            validated = validated and valid
-            if validated:
+            validated = validated and valid_value
+            if valid_key and valid_value:
                 cleaned.append((clean_key, clean))
     elif isinstance(key, If):
         exists = True
@@ -343,7 +343,13 @@ class Form:
                 suspicious
             )
         else:
-            raise ValueError("Schema must consist of a list or dict based structure.")
+            valid, clean = validate_value(
+                0,
+                suspicious,
+                self.schema,
+                self.errors,
+                None
+            )
         self.cleaned = clean
         return valid
 
