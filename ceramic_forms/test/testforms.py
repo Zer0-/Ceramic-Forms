@@ -163,6 +163,31 @@ class TestFormValidation(unittest.TestCase):
         self.assertFalse(form.errors)
         self.assertFalse(form.errors.section_errors)
 
+    def test_bare_function(self):
+        form = Form(lambda x: x == 4)
+        valid = form.validate(4)
+        self.assertTrue(valid)
+        self.assertEqual(4, form.cleaned)
+        self.assertFalse(form.errors)
+        self.assertFalse(form.errors.section_errors)
+
+    def test_bare_AND(self):
+        form = Form(And(int, lambda x: x == 4))
+        valid = form.validate(4)
+        self.assertTrue(valid)
+        self.assertEqual(4, form.cleaned)
+        self.assertFalse(form.errors)
+        self.assertFalse(form.errors.section_errors)
+
+    def test_bare_OR(self):
+        form = Form(Or(str, lambda x: x == 4))
+        for v in ['asdf', 4]:
+            valid = form.validate(v)
+            self.assertTrue(valid)
+            self.assertEqual(v, form.cleaned)
+            self.assertFalse(form.errors)
+            self.assertFalse(form.errors.section_errors)
+
 class TestFormValidationFailure(unittest.TestCase):
 
     def test_wrong_values(self):
@@ -343,6 +368,14 @@ class TestFormValidationFailure(unittest.TestCase):
         self.assertEqual(form.cleaned, {})
         self.assertEqual(len(form.errors[3]), 1)
         self.assertEqual(len(form.errors.section_errors), 2)
+
+    def test_bare_value_fail(self):
+        form = Form(4)
+        valid = form.validate(3)
+        self.assertFalse(valid)
+        self.assertEqual(None, form.cleaned)
+        self.assertEqual(len(form.errors.section_errors), 1)
+        self.assertFalse(form.errors)
 
     #TODO: test value exists if If condition not satisfied
     #TODO: test more than one value in XOR

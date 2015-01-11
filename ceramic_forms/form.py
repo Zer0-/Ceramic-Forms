@@ -281,6 +281,7 @@ def validate_value(key, value, reference_value, errors, entire_structure):
             errors[key].append('{} should equal {}'.format(
                     repr(value), repr(reference_value)
             ))
+            clean = None
     return valid, clean
 
 def validate_sequence(schema, suspicious, errors, entire_structure):
@@ -343,13 +344,15 @@ class Form:
                 suspicious
             )
         else:
+            err = FormErr()
             valid, clean = validate_value(
                 0,
                 suspicious,
                 self.schema,
-                self.errors,
+                err,
                 None
             )
+            self.errors.section_errors = err[0]
         self.cleaned = clean
         return valid
 
