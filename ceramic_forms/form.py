@@ -64,7 +64,13 @@ def path_exists(path, structure):
             return False
     return True
 
-def validate_key(key, suspicious, reference_value, errors, entire_structure):
+def validate_key(
+        key,
+        suspicious,
+        reference_value,
+        errors,
+        entire_structure,
+        validated_keys):
     validated = False
     cleaned = []
     if isinstance(key, Optional):
@@ -76,7 +82,8 @@ def validate_key(key, suspicious, reference_value, errors, entire_structure):
                 suspicious,
                 reference_value,
                 errors,
-                entire_structure
+                entire_structure,
+                validated_keys
             )
             cleaned.extend(clean)
     elif key == Or:
@@ -91,7 +98,8 @@ def validate_key(key, suspicious, reference_value, errors, entire_structure):
                     suspicious,
                     orvalue,
                     errors,
-                    entire_structure
+                    entire_structure,
+                    validated_keys
                 )
                 if valid:
                     cleaned.extend(clean)
@@ -109,7 +117,8 @@ def validate_key(key, suspicious, reference_value, errors, entire_structure):
                     suspicious,
                     orvalue,
                     errors,
-                    entire_structure
+                    entire_structure,
+                    validated_keys
                 )
                 if valid:
                     cleaned.extend(clean)
@@ -146,6 +155,7 @@ def validate_key(key, suspicious, reference_value, errors, entire_structure):
                 entire_structure
             )
             validated = validated and valid_value
+            validated_keys.add(raw_key)
             if valid_key and valid_value:
                 cleaned.append((clean_key, clean))
     elif isinstance(key, If):
@@ -161,7 +171,8 @@ def validate_key(key, suspicious, reference_value, errors, entire_structure):
                 suspicious,
                 reference_value,
                 errors,
-                entire_structure
+                entire_structure,
+                validated_keys
             )
             cleaned.extend(clean)
         #TODO: what happens if the key exists, but paths weren't found?
@@ -171,13 +182,15 @@ def validate_key(key, suspicious, reference_value, errors, entire_structure):
             suspicious,
             reference_value,
             FormErr(),
-            entire_structure
+            entire_structure,
+            validated_keys
         )
         if not validated:
             errors.section_errors.append(key.errmsg)
         else:
             cleaned.extend(clean)
     elif key in suspicious:
+        validated_keys.add(key)
         validated, clean = validate_value(
             key,
             suspicious[key],
@@ -311,17 +324,25 @@ def validate_sequence(schema, suspicious, errors, entire_structure):
 def validate_map(schema, suspicious, errors, entire_structure):
     all_valid = True
     cleaned = {}
+    keys_validated = set()
     for key, reference_value in schema.items():
         valid, clean = validate_key(
             key,
             suspicious,
             reference_value,
             errors,
-            entire_structure
+            entire_structure,
+            keys_validated
         )
         for key, value in clean:
             cleaned[key] = value
         all_valid = all_valid and valid
+
+    extra_keys = suspicious.keys() - keys_validated
+    if extra_keys:
+        all_valid = False
+        for extra_key in extra_keys:
+            errors.section_errors.append('Unexpected key {}'.format(extra_key))
     return all_valid, cleaned
 
 #TODO: Optional, If as key.

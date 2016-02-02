@@ -281,10 +281,30 @@ class TestFormValidationFailure(unittest.TestCase):
             'two': 2
         }
         form = Form(schema)
-        form.validate(data)
+        self.assertFalse(form.validate(data))
         self.assertEqual(len(form.errors.section_errors), 2)
         for sectionerr in form.errors.section_errors:
             self.assertTrue("missing" in sectionerr.lower())
+
+    def test_extra_key(self):
+        schema = {
+            'one': 1,
+            'three': {
+                'four': 4,
+            }
+        }
+        data = {
+            'one': 1,
+            'two': 2,
+            'three': {
+                'four': 4,
+                'five': 5
+            }
+        }
+        form = Form(schema)
+        self.assertFalse(form.validate(data))
+        self.assertEqual(len(form.errors.section_errors), 1)
+        self.assertEqual(len(form.errors['three'].section_errors), 1)
 
     def test_missing_or(self):
         schema = {
