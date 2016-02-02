@@ -32,9 +32,18 @@ class Msg:
         self.validator = validator
         self.errmsg = errmsg
 
+class SectionErrors(list):
+    def __init__(self, parent):
+        self.parent = parent
+
+    def append(self, *args, **kwargs):
+        self.parent['__section_errors__'] = self
+        list.append(self, *args, **kwargs)
+
+
 class FormErr(dict):
     def __init__(self, *args, **kwargs):
-        self.section_errors = []
+        self.section_errors = SectionErrors(self)
         dict.__init__(self, *args, **kwargs)
 
     def __getitem__(self, key):
@@ -43,12 +52,6 @@ class FormErr(dict):
             value = []
             self[key] = value
         return value
-
-    def __repr__(self):
-        return "<[{}]{{{}}}>".format(
-            ", ".join(self.section_errors),
-            "\n".join(["{}: {}".format(key, value) for key, value in self.items()])
-        )
 
     #TODO: len should calculate all errors recursively? at least include section_errors?
 
@@ -352,7 +355,6 @@ class Form:
                 err,
                 None
             )
-            self.errors.section_errors = err[0]
+            self.errors.section_errors.extend(err[0])
         self.cleaned = clean
         return valid
-

@@ -605,6 +605,7 @@ class TestMsgWrapper(unittest.TestCase):
         valid = form.validate(data)
         self.assertFalse(valid)
         self.assertEqual(form.errors.section_errors[0], msg)
+        del form.errors['__section_errors__']
         self.assertFalse(form.errors)
 
     def test_key_wrap_or(self):
@@ -620,6 +621,7 @@ class TestMsgWrapper(unittest.TestCase):
         valid = form.validate(data)
         self.assertFalse(valid)
         self.assertEqual(form.errors.section_errors[0], msg)
+        del form.errors['__section_errors__']
         self.assertFalse(form.errors)
 
 #TODO: make sure msg wrap doesn't screw up any nested validation.
